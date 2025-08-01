@@ -1,0 +1,33 @@
+Jul 30 11:58:01 lospollos CRON[2432]: pam_unix(cron:session): session opened for user root by (uid=0)
+Jul 30 11:58:01 lospollos CRON[2433]: pam_unix(cron:session): session closed for user root
+Jul 30 11:59:02 lospollos sshd[2457]: Connection from 192.168.1.45 port 50498 on 192.168.1.10 port 22
+Jul 30 11:59:03 lospollos sshd[2457]: Failed password for invalid user admin from 192.168.1.45 port 50498 ssh2
+Jul 30 12:00:14 lospollos sshd[2461]: Connection closed by 192.168.1.45 port 50498
+Jul 30 12:01:02 lospollos sudo:     alice : TTY=pts/0 ; PWD=/home/alice ; USER=root ; COMMAND=/bin/ls
+Jul 30 12:01:03 lospollos sudo: pam_unix(sudo:session): session opened for user root by alice(uid=0)
+Jul 30 12:01:03 lospollos sudo: pam_unix(sudo:session): session closed for user root
+Jul 30 12:01:50 lospollos sshd[2482]: Accepted publickey for alice from 10.0.0.42 port 51111 ssh2: RSA SHA256:ab:34:cd:ef
+Jul 30 12:02:23 lospollos login[2488]: pam_unix(login:session): session opened for user sara by LOGIN(uid=0)
+Jul 30 12:05:12 lospollos sshd[2490]: Failed password for root from 172.16.0.23 port 50211 ssh2
+Jul 30 12:06:44 lospollos sshd[2497]: Failed password for invalid user test from 172.16.0.23 port 50212 ssh2
+Jul 30 12:07:01 lospollos sshd[2499]: Connection reset by authenticating user john 172.16.0.23 port 50212 [preauth]
+Jul 30 12:07:33 lospollos systemd-logind[865]: New session 52 of user sara.
+Jul 30 12:08:17 lospollos sshd[2501]: Invalid user backup from 203.0.113.7 port 51912
+Jul 30 12:08:18 lospollos sshd[2501]: Failed password for invalid user backup from 203.0.113.7 port 51912 ssh2
+Jul 30 12:10:22 lospollos sshd[2505]: Accepted password for sara from 192.168.1.101 port 50911 ssh2
+Jul 30 12:12:59 lospollos gdm-password][2517]: pam_unix(gdm-password:session): session opened for user mike by (uid=0)
+Jul 30 12:13:10 lospollos sshd[2519]: Accepted password for mike from 10.13.37.99 port 55322 ssh2 - bandera13: 'Un_hombre_debe_tener_limites'
+Jul 30 12:13:12 lospollos sshd[2519]: pam_unix(sshd:session): session opened for user mike by (uid=0)
+Jul 30 12:14:33 lospollos sshd[2520]: Failed password for invalid user ftp from 198.51.100.9 port 41022 ssh2
+Jul 30 12:15:01 lospollos CRON[2521]: pam_unix(cron:session): session opened for user www-data by (uid=0)
+Jul 30 12:15:01 lospollos CRON[2521]: pam_unix(cron:session): session closed for user www-data
+Jul 30 12:15:37 lospollos sshd[2522]: Failed password for invalid user backup from 203.0.113.7 port 51912 ssh2
+Jul 30 12:16:22 lospollos systemd-logind[865]: Removed session 52.
+Jul 30 12:17:03 lospollos sshd[2530]: Accepted publickey for root from 10.0.0.5 port 60022 ssh2: ECDSA SHA256:7f:56:de:89
+Jul 30 12:17:06 lospollos sshd[2530]: pam_unix(sshd:session): session opened for user root by (uid=0)
+Jul 30 12:18:42 lospollos su[2535]: pam_unix(su:session): session opened for user postgres by root(uid=0)
+Jul 30 12:19:45 lospollos sshd[2538]: Disconnected from authenticating user sara 192.168.1.101 port 50911
+Jul 30 12:21:33 lospollos sshd[2543]: Connection closed by 10.13.37.99 port 55322 [preauth]
+Jul 30 12:22:19 lospollos sshd[2547]: Received disconnect from 203.0.113.7 port 51912:11: Bye Bye [preauth]
+Jul 30 12:23:11 lospollos sshd[2550]: Failed password for invalid user oracle from 198.51.100.12 port 61022 ssh2
+Jul 30 12:25:42 lospollos systemd-logind[865]: New session 53 of user mike.
