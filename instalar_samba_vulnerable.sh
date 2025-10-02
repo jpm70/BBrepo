@@ -44,10 +44,14 @@ mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
 echo "Descargando Samba version $SAMBA_VERSION..."
-# Descargamos el archivo como usuario normal
-wget -q "$SAMBA_URL"
+# CORRECCION CLAVE: Usamos la opcion -O para forzar el nombre de archivo de salida.
+wget -q "$SAMBA_URL" -O "$SAMBA_FILE"
 
-# Descomprimimos el archivo como usuario normal (donde no hay problemas de permiso)
+# Verificacion (para debug)
+echo "Archivos descargados en $BUILD_DIR:"
+ls -l
+
+# Descomprimimos el archivo como usuario normal
 echo "Descomprimiendo archivos..."
 tar -xzvf "$SAMBA_FILE"
 
