@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Este script instala Samba 4.3.8 (vulnerable al exploit CVE-2017-7494) 
-# en Ubuntu 16.04.x mediante compilación desde el código fuente.
+# en Ubuntu 16.04.x mediante compilacion desde el codigo fuente para asegurar la version.
 # La instalacion se realiza en /usr/local/samba.
 # ADVERTENCIA: Solo usar en un entorno de laboratorio aislado.
 
@@ -14,43 +14,51 @@ SHARE_NAME="vulnerable_share"
 SHARE_PATH="/samba/share"
 SMB_CONFIG_FILE="$SAMBA_INSTALL_DIR/etc/smb.conf"
 USERNAME="user_samba"
+BUILD_DIR="/tmp/samba_build"
 
-# --- 1. Limpieza de instalaciones previas de Samba (si existen) ---
+# --- 1. Limpieza y preparacion de sistema ---
 echo "--- 1. Limpieza de paquetes y preparacion de sistema ---"
 
 # Detenemos e inhabilitamos servicios si estuvieran activos
 sudo /etc/init.d/samba stop 2>/dev/null
 sudo apt-get remove --purge -y samba samba-common samba-common-bin 2>/dev/null
 
-# Eliminamos el directorio de instalacion anterior si existe
-sudo rm -rf "$SAMBA_INSTALL_DIR"
+# Eliminamos directorios de instalacion y compilacion (con sudo para asegurar)
+sudo rm -rf "$SAMBA_INSTALL_DIR" "$BUILD_DIR"
 
 # --- 2. Instalación de dependencias para la compilación ---
 echo "Instalando dependencias de compilacion..."
 
+# apt-get update es seguro y solo actualiza la lista de paquetes
 sudo apt-get update
 sudo apt-get install -y wget build-essential libacl1-dev libattr1-dev libblkid-dev libgnutls28-dev \
 libreadline-dev python-dev python-dnspython zlib1g-dev libpopt-dev libldap2-dev libpam0g-dev \
 libcups2-dev libtevent-dev libbsd-dev
 
-# --- 3. Descarga y extracción del código fuente (CORREGIDO) ---
+# --- 3. Descarga y extracción del código fuente (SOLUCION FINAL) ---
 echo "--- 3. Descarga y extraccion del codigo fuente ---"
+echo "Creando directorio de compilacion en $BUILD_DIR..."
+
+# Creamos el directorio sin sudo y trabajamos dentro como usuario normal
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+
 echo "Descargando Samba version $SAMBA_VERSION..."
-mkdir -p /tmp/samba_build && cd /tmp/samba_build
+# Descargamos el archivo como usuario normal
 wget -q "$SAMBA_URL"
 
-# CORRECCION: Forzamos la descompresion con sudo ya que estamos en un directorio temporal.
+# Descomprimimos el archivo como usuario normal (donde no hay problemas de permiso)
 echo "Descomprimiendo archivos..."
-sudo tar -xzvf "$SAMBA_FILE"
+tar -xzvf "$SAMBA_FILE"
 
-# CORRECCION: Cambiamos de directorio usando sudo, ya que la extraccion se hizo con permisos de root.
-echo "Cambiando a directorio de compilacion..."
-sudo cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se encontro. Abortando."; exit 1; }
+# Cambiamos al subdirectorio del codigo fuente
+echo "Cambiando a directorio de codigo fuente..."
+cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se encontro. Abortando."; exit 1; }
 
 # --- 4. Compilación e Instalación ---
 echo "--- 4. Configuracion y Compilacion (puede tardar varios minutos) ---"
 
-# Configuracion y Compilacion se ejecutan con sudo porque estamos dentro de una carpeta root-owned.
+# Configuracion y Compilacion se ejecutan con sudo para escribir en rutas del sistema.
 echo "Configurando la compilacion..."
 sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc
 
@@ -60,16 +68,15 @@ sudo make -j$(nproc)
 echo "Instalando Samba en $SAMBA_INSTALL_DIR..."
 sudo make install
 
-# Limpieza de archivos de compilacion
+# Limpieza de archivos de compilacion (opcional)
 cd /tmp
-sudo rm -rf /tmp/samba_build
+sudo rm -rf "$BUILD_DIR"
 
 # --- 5. Configuración básica del recurso compartido ---
 echo "--- 5. Configurando el recurso compartido '$SHARE_NAME' en $SHARE_PATH ---"
 
-# Crear el directorio compartido
+# Crear el directorio compartido y establecer permisos
 sudo mkdir -p "$SHARE_PATH"
-# Establecer permisos (importante para el PoC)
 sudo chmod 777 "$SHARE_PATH"
 
 # --- 6. Creación del archivo smb.conf ---
