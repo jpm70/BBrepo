@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Este script instala Samba 4.3.8 (vulnerable al exploit CVE-2017-7494) 
-# en Ubuntu 16.04.x mediante compilación desde el código fuente para asegurar la version.
+# en Ubuntu 16.04.x mediante compilación desde el código fuente.
 # La instalacion se realiza en /usr/local/samba.
 # ADVERTENCIA: Solo usar en un entorno de laboratorio aislado.
 
@@ -33,26 +33,36 @@ sudo apt-get install -y wget build-essential libacl1-dev libattr1-dev libblkid-d
 libreadline-dev python-dev python-dnspython zlib1g-dev libpopt-dev libldap2-dev libpam0g-dev \
 libcups2-dev libtevent-dev libbsd-dev
 
-# --- 3. Descarga y extracción del código fuente ---
+# --- 3. Descarga y extracción del código fuente (CORREGIDO) ---
+echo "--- 3. Descarga y extraccion del codigo fuente ---"
 echo "Descargando Samba version $SAMBA_VERSION..."
 mkdir -p /tmp/samba_build && cd /tmp/samba_build
-wget "$SAMBA_URL"
-tar -xzvf "$SAMBA_FILE"
-cd "samba-$SAMBA_VERSION"
+wget -q "$SAMBA_URL"
+
+# CORRECCION: Forzamos la descompresion con sudo ya que estamos en un directorio temporal.
+echo "Descomprimiendo archivos..."
+sudo tar -xzvf "$SAMBA_FILE"
+
+# CORRECCION: Cambiamos de directorio usando sudo, ya que la extraccion se hizo con permisos de root.
+echo "Cambiando a directorio de compilacion..."
+sudo cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se encontro. Abortando."; exit 1; }
 
 # --- 4. Compilación e Instalación ---
-echo "Configurando y compilando Samba (esto puede tardar varios minutos)..."
+echo "--- 4. Configuracion y Compilacion (puede tardar varios minutos) ---"
 
-# La instalacion se fuerza a la ruta especificada
-./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc
-make -j$(nproc)
+# Configuracion y Compilacion se ejecutan con sudo porque estamos dentro de una carpeta root-owned.
+echo "Configurando la compilacion..."
+sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc
+
+echo "Compilando..."
+sudo make -j$(nproc)
 
 echo "Instalando Samba en $SAMBA_INSTALL_DIR..."
 sudo make install
 
 # Limpieza de archivos de compilacion
 cd /tmp
-rm -rf /tmp/samba_build
+sudo rm -rf /tmp/samba_build
 
 # --- 5. Configuración básica del recurso compartido ---
 echo "--- 5. Configurando el recurso compartido '$SHARE_NAME' en $SHARE_PATH ---"
@@ -63,7 +73,7 @@ sudo mkdir -p "$SHARE_PATH"
 sudo chmod 777 "$SHARE_PATH"
 
 # --- 6. Creación del archivo smb.conf ---
-echo "Creando el archivo de configuracion ($SMB_CONFIG_FILE)..."
+echo "--- 6. Creando el archivo de configuracion ($SMB_CONFIG_FILE) ---"
 
 # Crear el directorio de configuracion si no existe
 sudo mkdir -p "$SAMBA_INSTALL_DIR/etc"
@@ -96,7 +106,7 @@ sudo bash -c "cat > $SMB_CONFIG_FILE" << EOF
     unix extensions = no
 EOF
 
-# --- 7. Creación de usuario y reinicio del servicio ---
+# --- 7. Creación de usuario y ejecución de servicios ---
 echo "--- 7. Creacion de usuario y ejecucion de servicios ---"
 
 echo "Creando usuario de Linux '$USERNAME' (si no existe)..."
@@ -104,7 +114,7 @@ echo "Creando usuario de Linux '$USERNAME' (si no existe)..."
 sudo id -u "$USERNAME" &>/dev/null || sudo useradd -m -s /bin/bash "$USERNAME"
 
 echo "Debes establecer la contrasena para el usuario de Samba '$USERNAME'."
-# Usamos la ruta especifica de instalacion.
+# Usamos la ruta especifica de instalacion para smbpasswd.
 sudo "$SAMBA_INSTALL_DIR/bin/smbpasswd" -a "$USERNAME"
 # Introduce la contraseña dos veces cuando se te solicite.
 
@@ -113,9 +123,10 @@ echo "Iniciando los demonios de Samba (smbd y nmbd) en segundo plano..."
 sudo "$SAMBA_INSTALL_DIR/sbin/smbd" -D
 sudo "$SAMBA_INSTALL_DIR/sbin/nmbd" -D
 
+echo "--- ¡FINALIZADO! ---"
 echo "Instalacion completa! El servidor Samba vulnerable esta activo."
 echo "Detalles:"
-echo "- Version de Samba: $($SAMBA_INSTALL_DIR/sbin/smbd -V | head -n 1)"
+echo "- Version de Samba: $("$SAMBA_INSTALL_DIR/sbin/smbd" -V | head -n 1)"
 echo "- Ruta de instalacion: $SAMBA_INSTALL_DIR"
 echo "- Recurso compartido: //$HOSTNAME/$SHARE_NAME (o //IP_DEL_HOST/$SHARE_NAME)"
 echo "- Usuario Samba: $USERNAME"
