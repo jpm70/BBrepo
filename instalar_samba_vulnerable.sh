@@ -56,16 +56,16 @@ tar -xzvf "$SAMBA_FILE"
 echo "Cambiando a directorio de codigo fuente..."
 cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se pudo encontrar despues de descomprimir. Abortando."; exit 1; }
 
-# --- 4. Compilación e Instalación (CORREGIDA) ---
+# --- 4. Compilación e Instalación ---
 echo "--- 4. Configuracion y Compilacion (puede tardar varios minutos) ---"
 
-# CORRECCION: Forzamos la ejecucion del script de preparacion de Waf
-echo "Inicializando el entorno de compilacion (Waf)..."
-sudo ./autogen.sh 2>/dev/null # Puede ser necesario en algunos casos
+echo "Inicializando la configuracion con Waf..."
+# Utilizamos ./configure ya que este wrapper llama internamente a Waf.
+# Si ./configure fallara, la siguiente instruccion de make se abortaria.
 sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc --enable-debug
 
 echo "Compilando..."
-# make (Waf) ahora deberia reconocer el proyecto configurado
+# make (Waf) ahora debería reconocer el proyecto configurado.
 sudo make -j$(nproc)
 
 echo "Instalando Samba en $SAMBA_INSTALL_DIR..."
