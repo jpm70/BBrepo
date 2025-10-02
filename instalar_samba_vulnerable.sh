@@ -20,7 +20,8 @@ echo "--- 1. Verificacion, Limpieza y preparacion de sistema ---"
 # Verificacion del archivo local
 if [ ! -f "$SAMBA_FILE" ]; then
     echo "ERROR: Archivo '$SAMBA_FILE' no encontrado en el directorio actual."
-    echo "Por favor, descargalo manualmente desde la web de Samba y colocalo aqui antes de ejecutar el script."
+    echo "Por favor, descargalo manualmente desde: https://download.samba.org/pub/samba/samba-4.3.13.tar.gz"
+    echo "Y colocalo en este directorio antes de ejecutar el script."
     exit 1
 fi
 
@@ -49,22 +50,22 @@ cd "$BUILD_DIR"
 
 # Descomprimimos el archivo como usuario normal
 echo "Descomprimiendo archivos..."
-# Descomprime el archivo local, el problema de 'wget' ya no existe.
 tar -xzvf "$SAMBA_FILE"
 
 # Cambiamos al subdirectorio del codigo fuente
 echo "Cambiando a directorio de codigo fuente..."
 cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se pudo encontrar despues de descomprimir. Abortando."; exit 1; }
 
-# --- 4. Compilación e Instalación ---
+# --- 4. Compilación e Instalación (CORREGIDA) ---
 echo "--- 4. Configuracion y Compilacion (puede tardar varios minutos) ---"
 
-echo "Configurando la compilacion..."
-# Configuramos la instalacion en la ruta predecible /usr/local/samba
+# CORRECCION: Forzamos la ejecucion del script de preparacion de Waf
+echo "Inicializando el entorno de compilacion (Waf)..."
+sudo ./autogen.sh 2>/dev/null # Puede ser necesario en algunos casos
 sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc --enable-debug
 
 echo "Compilando..."
-# Utilizamos make con -j para acelerar el proceso
+# make (Waf) ahora deberia reconocer el proyecto configurado
 sudo make -j$(nproc)
 
 echo "Instalando Samba en $SAMBA_INSTALL_DIR..."
