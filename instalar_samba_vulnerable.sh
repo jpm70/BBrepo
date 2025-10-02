@@ -20,8 +20,7 @@ echo "--- 1. Verificacion, Limpieza y preparacion de sistema ---"
 # Verificacion del archivo local
 if [ ! -f "$SAMBA_FILE" ]; then
     echo "ERROR: Archivo '$SAMBA_FILE' no encontrado en el directorio actual."
-    echo "Por favor, descargalo manualmente desde: https://download.samba.org/pub/samba/samba-4.3.13.tar.gz"
-    echo "Y colocalo en este directorio antes de ejecutar el script."
+    echo "Por favor, asegurate de que el archivo $SAMBA_FILE este en el mismo directorio que este script."
     exit 1
 fi
 
@@ -30,13 +29,14 @@ sudo /etc/init.d/samba stop 2>/dev/null
 sudo apt-get remove --purge -y samba samba-common samba-common-bin 2>/dev/null
 sudo rm -rf "$SAMBA_INSTALL_DIR" "$BUILD_DIR"
 
-# --- 2. Instalación de dependencias para la compilación ---
-echo "Instalando dependencias de compilacion..."
+# --- 2. Instalación de dependencias para la compilación (CORREGIDA) ---
+echo "--- 2. Instalando dependencias de compilacion ---"
 
 # apt-get update es seguro y solo actualiza la lista de paquetes
 sudo apt-get update
+# Añadimos libpython-dev, crucial para la configuracion de Waf en sistemas antiguos
 sudo apt-get install -y build-essential libacl1-dev libattr1-dev libblkid-dev libgnutls28-dev \
-libreadline-dev python-dev python-dnspython zlib1g-dev libpopt-dev libldap2-dev libpam0g-dev \
+libreadline-dev python-dev libpython-dev python-dnspython zlib1g-dev libpopt-dev libldap2-dev libpam0g-dev \
 libcups2-dev libtevent-dev libbsd-dev wget
 
 # --- 3. Extracción del código fuente (Local) ---
@@ -60,13 +60,18 @@ cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se pu
 echo "--- 4. Configuracion y Compilacion (puede tardar varios minutos) ---"
 
 echo "Inicializando la configuracion con Waf..."
-# Utilizamos ./configure ya que este wrapper llama internamente a Waf.
-# Si ./configure fallara, la siguiente instruccion de make se abortaria.
-sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc --enable-debug
+# Usamos ./configure, que deberia funcionar correctamente ahora con libpython-dev instalado.
+sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc --enable-debug || { 
+    echo "ERROR: Fallo al ejecutar ./configure. Revisa si faltan dependencias."
+    exit 1
+}
 
 echo "Compilando..."
 # make (Waf) ahora debería reconocer el proyecto configurado.
-sudo make -j$(nproc)
+sudo make -j$(nproc) || {
+    echo "ERROR: Fallo al compilar. Revisa si hay errores en el log."
+    exit 1
+}
 
 echo "Instalando Samba en $SAMBA_INSTALL_DIR..."
 sudo make install
