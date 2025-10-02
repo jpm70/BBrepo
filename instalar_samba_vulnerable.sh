@@ -25,16 +25,16 @@ if [ ! -f "$SAMBA_FILE" ]; then
 fi
 
 # Limpieza de instalaciones previas
+echo "Limpiando instalaciones previas y directorios de compilacion..."
 sudo /etc/init.d/samba stop 2>/dev/null
 sudo apt-get remove --purge -y samba samba-common samba-common-bin 2>/dev/null
 sudo rm -rf "$SAMBA_INSTALL_DIR" "$BUILD_DIR"
 
-# --- 2. Instalación de dependencias para la compilación (CORREGIDA) ---
+# --- 2. Instalación de dependencias para la compilación ---
 echo "--- 2. Instalando dependencias de compilacion ---"
 
-# apt-get update es seguro y solo actualiza la lista de paquetes
 sudo apt-get update
-# Añadimos libpython-dev, crucial para la configuracion de Waf en sistemas antiguos
+# Incluye todas las dependencias identificadas como necesarias para sistemas antiguos
 sudo apt-get install -y build-essential libacl1-dev libattr1-dev libblkid-dev libgnutls28-dev \
 libreadline-dev python-dev libpython-dev python-dnspython zlib1g-dev libpopt-dev libldap2-dev libpam0g-dev \
 libcups2-dev libtevent-dev libbsd-dev wget
@@ -43,31 +43,27 @@ libcups2-dev libtevent-dev libbsd-dev wget
 echo "--- 3. Extraccion del codigo fuente local ---"
 echo "Creando directorio de compilacion en $BUILD_DIR..."
 
-# Movemos el archivo a la carpeta de compilacion para trabajar
 mkdir -p "$BUILD_DIR"
 cp "$SAMBA_FILE" "$BUILD_DIR/"
 cd "$BUILD_DIR"
 
-# Descomprimimos el archivo como usuario normal
 echo "Descomprimiendo archivos..."
 tar -xzvf "$SAMBA_FILE"
 
-# Cambiamos al subdirectorio del codigo fuente
 echo "Cambiando a directorio de codigo fuente..."
 cd "samba-$SAMBA_VERSION" || { echo "Error: La carpeta de codigo fuente no se pudo encontrar despues de descomprimir. Abortando."; exit 1; }
 
-# --- 4. Compilación e Instalación ---
+# --- 4. Compilación e Instalación (CORREGIDA) ---
 echo "--- 4. Configuracion y Compilacion (puede tardar varios minutos) ---"
 
 echo "Inicializando la configuracion con Waf..."
-# Usamos ./configure, que deberia funcionar correctamente ahora con libpython-dev instalado.
-sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-tcmalloc --enable-debug || { 
-    echo "ERROR: Fallo al ejecutar ./configure. Revisa si faltan dependencias."
+# ELIMINADO: --enable-tcmalloc (causaba el error waf: error: no such option)
+sudo ./configure --prefix="$SAMBA_INSTALL_DIR" --enable-debug || { 
+    echo "ERROR: Fallo al ejecutar ./configure. Esto puede indicar dependencias de desarrollo faltantes."
     exit 1
 }
 
-echo "Compilando..."
-# make (Waf) ahora debería reconocer el proyecto configurado.
+echo "Compilando... (Usando $(nproc) nucleos)"
 sudo make -j$(nproc) || {
     echo "ERROR: Fallo al compilar. Revisa si hay errores en el log."
     exit 1
@@ -140,5 +136,6 @@ echo "- Recurso compartido: //$HOSTNAME/$SHARE_NAME (o //IP_DEL_HOST/$SHARE_NAME
 echo "- Usuario Samba: $USERNAME"
 echo "- Archivo de configuracion: $SMB_CONFIG_FILE"
 
+echo "Exportando rutas de Samba a la variable PATH..."
 echo "export PATH=\$PATH:$SAMBA_INSTALL_DIR/bin:$SAMBA_INSTALL_DIR/sbin" >> ~/.bashrc
 source ~/.bashrc
